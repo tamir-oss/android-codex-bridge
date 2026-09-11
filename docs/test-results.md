@@ -16,7 +16,7 @@ Reference device: Nothing A059P (`Asteroids`), Android 16 / API 36, 1080x2392, n
 ## Verified in practice
 
 - APK build and v1/v2/v3 signature verification.
-- Ten host-side protocol/token, migration-preservation and USB-state parser tests.
+- Twelve host-side protocol/token, awake-CLI validation/routing, migration-preservation and USB-state parser tests.
 - Unified skill installed on the reference phone; the original `phone-control` SHA-256 remained identical and a fresh Shizuku status check succeeded. Previous skill instructions were archived outside active skill discovery.
 - Service state, unlocked state and active package readback.
 - Invalid-token rejection followed by successful authenticated reconnect.
@@ -34,9 +34,17 @@ Reference device: Nothing A059P (`Asteroids`), Android 16 / API 36, 1080x2392, n
 
 No real account, message, form submission, payment or deletion was used for testing.
 
+## Temporary screen-awake lease (v0.3)
+
+- Built and installed without adding Android permissions or changing timeout settings.
+- Real-device start, renewal, concurrent-start rejection, wrong-ID rejection, explicit release, abandoned-lease expiry, stale renewal rejection and Unicode input with the overlay passed.
+- Android WindowManager attributed its `mHoldScreenWindow` to `CodexTaskAwake`; USB stay-awake was off. This confirms the visible overlay, not a charger setting, held the screen.
+- Idle retention beyond the configured five-minute timeout is being tested; manual Power-button revocation still needs the user transition.
+- The integration is skill/tool-driven with bounded expiry, not a built-in Codex task lifecycle hook.
+
 ## Still requiring a manual device transition
 
-- Lock the phone, confirm the companion refuses control, unlock normally and confirm reconnect.
+- Lock the phone, confirm authenticated status and redacted inspection still work, verify UI mutations require unlock and local Termux computation continues, then unlock normally and confirm UI recovery. This is the v0.2 operation-scoped policy; older blanket-rejection probes do not validate it.
 - Disconnect USB and run the safe test from Termux to prove the computer is not a runtime dependency.
 - Broader application and manufacturer compatibility.
 

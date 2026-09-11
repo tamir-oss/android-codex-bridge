@@ -7,6 +7,7 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
@@ -50,12 +51,14 @@ public final class BridgeAccessibilityService extends AccessibilityService {
     private volatile boolean running;
     private ServerSocket serverSocket;
     private Thread serverThread;
+    private ScreenAwakeLease awakeLease;
 
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
         generation.incrementAndGet();
         BridgeCredentialStore.getOrCreate(this);
+        if (awakeLease == null) awakeLease = new ScreenAwakeLease(this, mainHandler);
         startServer();
     }
 
@@ -66,11 +69,13 @@ public final class BridgeAccessibilityService extends AccessibilityService {
 
     @Override
     public void onInterrupt() {
+        if (awakeLease != null) awakeLease.release("service_interrupted");
         generation.incrementAndGet();
     }
 
     @Override
     public void onDestroy() {
+        if (awakeLease != null) awakeLease.release("service_destroyed");
         stopServer();
         super.onDestroy();
     }
@@ -193,6 +198,14 @@ public final class BridgeAccessibilityService extends AccessibilityService {
         if (args == null) args = new JSONObject();
 
         switch (command) {
+            case "awake":
+                try {
+                    return success(id, awakeLease.command(args));
+                } catch (IllegalArgumentException error) {
+                    return failure(id, error.getMessage(), "Temporary screen-awake request rejected");
+                } catch (JSONException error) {
+                    return failure(id, "INTERNAL_ERROR", "Could not serialize awake state");
+                }
             case "status":
                 return success(id, statusResult());
             case "snapshot":
@@ -201,18 +214,36 @@ public final class BridgeAccessibilityService extends AccessibilityService {
                 return perform(id, args);
             default:
                 return failure(id, "UNKNOWN_COMMAND",
-                        "Supported commands are status, snapshot and perform");
+                        "Supported commands are status, snapshot, perform and awake");
         }
     }
 
     private JSONObject statusResult() {
         JSONObject result = new JSONObject();
         put(result, "service_enabled", true);
+        try {
+            put(result, "screen_awake", awakeLease.status());
+        } catch (JSONException error) {
+            put(result, "screen_awake", JSONObject.NULL);
+        }
         put(result, "transport", "tcp-loopback");
         put(result, "listen_address", "127.0.0.1");
         put(result, "peer_authentication", "256-bit-local-token");
-        put(result, "locked", isLocked());
+        boolean locked = isLocked();
+        put(result, "locked", locked);
+        put(result, "lock_policy", "operation-scoped-v1");
+        put(result, "inspection_scope", locked ? "status_only" : "active_window");
+        put(result, "ui_actions_require_unlock", true);
+        put(result, "background_work_managed", false);
+        PowerManager power = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        put(result, "screen_interactive", power != null && power.isInteractive());
         put(result, "generation", generation.get());
+        if (locked) {
+            invalidateNodes();
+            put(result, "package", JSONObject.NULL);
+            put(result, "window_id", JSONObject.NULL);
+            return result;
+        }
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root != null) {
             try {
@@ -229,7 +260,7 @@ public final class BridgeAccessibilityService extends AccessibilityService {
     }
 
     private JSONObject snapshot(String id, boolean includeText) {
-        if (isLocked()) return failure(id, "DEVICE_LOCKED", "Unlock the device first");
+        if (isLocked()) return lockedSnapshot(id);
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) return failure(id, "NO_ACTIVE_WINDOW", "No active accessibility window");
 
@@ -246,6 +277,7 @@ public final class BridgeAccessibilityService extends AccessibilityService {
             root.recycle();
         }
 
+        if (isLocked()) return lockedSnapshot(id);
         if (startGeneration != generation.get()) {
             return failure(id, "WINDOW_CHANGED", "The screen changed during inspection; retry");
         }
@@ -254,6 +286,9 @@ public final class BridgeAccessibilityService extends AccessibilityService {
             lastSnapshot.putAll(captured);
         }
         JSONObject result = new JSONObject();
+        put(result, "locked", false);
+        put(result, "redacted", false);
+        put(result, "inspection_scope", "active_window");
         put(result, "generation", startGeneration);
         put(result, "window_id", windowId);
         put(result, "package", packageName);
@@ -261,6 +296,33 @@ public final class BridgeAccessibilityService extends AccessibilityService {
         put(result, "truncated", counter[0] >= MAX_NODES);
         put(result, "nodes", nodes);
         return success(id, result);
+    }
+
+    private void invalidateNodes() {
+        synchronized (lastSnapshot) {
+            lastSnapshot.clear();
+        }
+    }
+
+    private JSONObject lockedSnapshot(String id) {
+        invalidateNodes();
+        JSONObject result = statusResult();
+        // Do not inspect a previous app, notifications or credential UI behind keyguard.
+        put(result, "locked", true);
+        put(result, "package", JSONObject.NULL);
+        put(result, "window_id", JSONObject.NULL);
+        put(result, "inspection_scope", "status_only");
+        put(result, "redacted", true);
+        put(result, "node_count", 0);
+        put(result, "nodes", new JSONArray());
+        put(result, "truncated", false);
+        return success(id, result);
+    }
+
+    private JSONObject uiRequiresUnlock(String id) {
+        invalidateNodes();
+        return failure(id, "UI_REQUIRES_UNLOCK",
+                "This action changes UI and needs an unlocked, verified window; status and background work remain available");
     }
 
     private void collect(AccessibilityNodeInfo node, List<Integer> path, long snapshotGeneration,
@@ -309,12 +371,14 @@ public final class BridgeAccessibilityService extends AccessibilityService {
     }
 
     private JSONObject perform(String id, JSONObject args) {
-        if (isLocked()) return failure(id, "DEVICE_LOCKED", "Unlock the device first");
         String nodeId = args.optString("node", "");
         String action = args.optString("action", "");
         if (nodeId.isEmpty() || action.isEmpty()) {
             return failure(id, "BAD_REQUEST", "perform requires node and action");
         }
+        // All currently implemented node actions mutate UI. Metadata requests are
+        // handled separately and remain available while Android keyguard is locked.
+        if (isLocked()) return uiRequiresUnlock(id);
         final NodeRef ref;
         synchronized (lastSnapshot) {
             ref = lastSnapshot.get(nodeId);
@@ -359,6 +423,7 @@ public final class BridgeAccessibilityService extends AccessibilityService {
         if ((node.getActions() & androidAction) == 0) {
             return failure(id, "ACTION_NOT_SUPPORTED", "The selected element does not support this action");
         }
+        if (isLocked()) return uiRequiresUnlock(id);
         boolean accepted = node.performAction(androidAction);
         if (!accepted) return failure(id, "ACTION_REJECTED", "Android rejected the requested action");
         SystemClock.sleep(120);
@@ -367,18 +432,26 @@ public final class BridgeAccessibilityService extends AccessibilityService {
         put(result, "action", action);
         put(result, "accepted", true);
         put(result, "post_state", currentWindowSummary());
+        if (isLocked()) {
+            invalidateNodes();
+            put(result, "verified", false);
+            put(result, "warning", "Device locked before verification; inspect after normal unlock before retrying");
+            return success(id, result);
+        }
         if (action.equals("focus")) {
             AccessibilityNodeInfo after = reacquire(ref);
             boolean verified = after != null && after.isFocused();
             if (after != null) after.recycle();
             put(result, "verified", verified);
         } else {
-            put(result, "verified", true);
+            put(result, "verified", false);
+            put(result, "verification", "fresh_result_inspection_required");
         }
         return success(id, result);
     }
 
     private JSONObject setText(String id, JSONObject args, AccessibilityNodeInfo node, NodeRef ref) {
+        if (isLocked()) return uiRequiresUnlock(id);
         if (!args.has("text")) return failure(id, "BAD_REQUEST", "set_text requires text");
         String value = args.optString("text", "");
         if (!node.isEditable() || (node.getActions() & AccessibilityNodeInfo.ACTION_SET_TEXT) == 0) {
@@ -408,12 +481,25 @@ public final class BridgeAccessibilityService extends AccessibilityService {
         Bundle bundle = new Bundle();
         bundle.putCharSequence(
                 AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value);
+        if (isLocked()) {
+            current.recycle();
+            return uiRequiresUnlock(id);
+        }
         boolean accepted = current.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, bundle);
         current.recycle();
         if (!accepted) return failure(id, "SET_TEXT_REJECTED",
                 "The application rejected ACTION_SET_TEXT");
 
         SystemClock.sleep(160);
+        if (isLocked()) {
+            invalidateNodes();
+            JSONObject pending = new JSONObject();
+            put(pending, "action", "set_text");
+            put(pending, "accepted", true);
+            put(pending, "verified", false);
+            put(pending, "warning", "Device locked before verification; inspect after normal unlock before retrying");
+            return success(id, pending);
+        }
         AccessibilityNodeInfo after = reacquireByStableIdentity(ref);
         boolean verified = after != null && TextUtils.equals(after.getText(), value);
         if (after != null) after.recycle();
@@ -504,22 +590,7 @@ public final class BridgeAccessibilityService extends AccessibilityService {
     }
 
     private JSONObject currentWindowSummary() {
-        JSONObject state = new JSONObject();
-        put(state, "locked", isLocked());
-        put(state, "generation", generation.get());
-        AccessibilityNodeInfo root = getRootInActiveWindow();
-        if (root == null) {
-            put(state, "package", JSONObject.NULL);
-            put(state, "window_id", JSONObject.NULL);
-            return state;
-        }
-        try {
-            put(state, "package", charSequence(root.getPackageName()));
-            put(state, "window_id", root.getWindowId());
-        } finally {
-            root.recycle();
-        }
-        return state;
+        return statusResult();
     }
 
     private boolean isLocked() {

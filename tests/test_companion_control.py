@@ -4,6 +4,9 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
+import contextlib
+import io
 
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "companion-control.py"
@@ -13,6 +16,24 @@ SPEC.loader.exec_module(MODULE)
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_awake_cli_routes_and_defaults(self):
+        cases = [(["awake-start"], {"action": "start", "seconds": 120}),
+                 (["awake-renew", "lease", "--seconds", "30"],
+                  {"action": "renew", "lease_id": "lease", "seconds": 30}),
+                 (["awake-stop", "lease"], {"action": "stop", "lease_id": "lease"})]
+        for argv, expected in cases:
+            with self.subTest(argv=argv), patch.object(MODULE, "request", return_value={"ok": True}) as call:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(MODULE.main(argv), 0)
+                call.assert_called_once_with("awake", expected)
+
+    def test_awake_invalid_duration_never_connects(self):
+        for seconds in ("0", "601", "1.5"):
+            with patch.object(MODULE, "request") as call, contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    MODULE.main(["awake-start", "--seconds", seconds])
+                call.assert_not_called()
+
     def test_unicode_request_is_preserved(self):
         encoded = MODULE.encode_request(
             "perform",

@@ -115,6 +115,13 @@ def build_parser():
     sub.add_parser("pair-from-clipboard",
                    help="store a token copied explicitly from the companion, then clear the clipboard")
     sub.add_parser("status", help="show service, lock and active-window state")
+    for action in ("start", "renew", "stop"):
+        awake = sub.add_parser("awake-" + action, help="bounded task-only screen-awake lease")
+        if action != "start":
+            awake.add_argument("lease_id", help="lease id returned by awake-start")
+        if action != "stop":
+            awake.add_argument("--seconds", type=int, default=120, choices=range(5, 601),
+                               metavar="5..600", help="expiry unless explicitly renewed (default 120)")
     inspect = sub.add_parser("inspect", help="read a fresh structured UI snapshot")
     inspect.add_argument("--no-text", action="store_true",
                          help="omit visible text and content descriptions")
@@ -144,6 +151,12 @@ def main(argv=None):
             response = connection_error(str(error))
     elif args.command == "status":
         command, payload = "status", {}
+    elif args.command.startswith("awake-"):
+        command, payload = "awake", {"action": args.command[6:]}
+        if hasattr(args, "lease_id"):
+            payload["lease_id"] = args.lease_id
+        if hasattr(args, "seconds"):
+            payload["seconds"] = args.seconds
     elif args.command == "inspect":
         command, payload = "snapshot", {"include_text": not args.no_text}
     elif args.command == "set-text":

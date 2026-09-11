@@ -93,9 +93,39 @@ android-ui scroll-forward n126-0
 android-ui scroll-backward n127-0
 ```
 
-The exact IDs above are examples; they deliberately expire when the UI changes. Before an action, verify `android-ui status` reports `locked: false` and the intended package. After it, inspect again and verify the visible result. `--compact` produces one-line JSON for an agent.
+The exact IDs above are examples; they deliberately expire when the UI changes. Before a UI-changing action, verify `android-ui status` reports `locked: false` and the intended package. After it, inspect again and verify the visible result. `--compact` produces one-line JSON for an agent. Accepted clicks and scrolls return `verified: false` until the caller inspects their visible result; command acceptance alone is not completion.
 
-`set-text` uses Android `ACTION_SET_TEXT`, so Hebrew, English and mixed text do not pass through `input text` and do not require replacing the keyboard. If the app does not expose an editable field with `ACTION_SET_TEXT`, the command returns `SET_TEXT_UNSUPPORTED`. Other important errors include `DEVICE_LOCKED`, `NO_ACTIVE_WINDOW`, `STALE_NODE`, `STALE_WINDOW`, `FOCUS_CHANGED`, `UNAUTHORIZED` and `CONNECTION_UNAVAILABLE`.
+### Lock policy by operation
+
+`status` remains available while locked. `inspect` also succeeds but returns only device/service state, `inspection_scope: status_only`, `redacted: true`, and `nodes: []`; it does not inspect underlying apps, notifications or credential fields. All current node mutations need an unlocked window and return `UI_REQUIRES_UNLOCK` otherwise. A lock observed during an action makes verification incomplete; inspect after normal unlock before deciding whether a retry is appropriate.
+
+The companion does not stop or manage background work in Termux. Authorized file processing, development and background services can continue subject to Android scheduling and permissions. Shizuku remains an independent backend. This policy neither grants root nor bypasses Android keyguard. Full phone reboot and unattended background persistence are separate concerns.
+
+`set-text` uses Android `ACTION_SET_TEXT`, so Hebrew, English and mixed text do not pass through `input text` and do not require replacing the keyboard. If the app does not expose an editable field with `ACTION_SET_TEXT`, the command returns `SET_TEXT_UNSUPPORTED`. Other important errors include `UI_REQUIRES_UNLOCK`, `NO_ACTIVE_WINDOW`, `STALE_NODE`, `STALE_WINDOW`, `FOCUS_CHANGED`, `UNAUTHORIZED` and `CONNECTION_UNAVAILABLE`.
+
+### Temporary task screen-awake control
+
+Companion v0.3 adds an authenticated, task-scoped lease. Use it only for screen tasks that need an unlocked UI; development and file-processing tasks do not need the display kept on.
+
+```sh
+android-ui awake-start --seconds 120
+# Use result.lease_id from that response, not this placeholder:
+android-ui awake-renew LEASE_ID --seconds 120
+android-ui awake-stop LEASE_ID
+android-ui status
+```
+
+Each start/renew accepts an integer 5–600 seconds (CLI default 120). Only one lease may exist; another start returns `AWAKE_LEASE_BUSY`. Renewal/release require the lease ID in addition to normal request authentication. Status reports active state and remaining milliseconds but not its ID. An expired/revoked/wrong ID returns `STALE_AWAKE_LEASE`. Start cannot wake a sleeping or locked phone.
+
+The service owns a small, visible, non-focusable and non-touchable accessibility overlay with `FLAG_KEEP_SCREEN_ON`. It adds no permission, permanent setting, keyboard, network service, root or Shizuku dependency. The overlay is removed on explicit release, expiry, screen-off, lock detection, service interruption/destruction, or process death. A monotonic deadline and independent one-second watchdog handle an abandoned client. No lease survives restart. Manual lock is never dismissed. The indicator can visually cover a small part of an app; release when no longer needed.
+
+The unified skill starts/renews/releases the lease around UI work; scripted workflows must release in `finally`/`trap`. This is not a native Codex completion hook: if the agent forgets cleanup or loses its connection, expiry is the fallback, not instant end-of-turn release. Do not continuously renew during idle/user-approval waits. Keeping a display lit consumes battery and does not guarantee Termux background lifetime.
+
+Reference: [Android window flags](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#FLAG_KEEP_SCREEN_ON). Android's ordinary activity `keepScreenOn` stops applying when that activity is backgrounded; this companion uses a visible accessibility window and requires real-device validation. Do not infer support on every vendor from a successful build.
+
+Run `python scripts/test-awake-on-device.py` for start, renewal, ownership, Unicode entry with the overlay, release, expiry and stale-renewal checks. Optional `--idle-seconds 310` tests past the reference device's five-minute screen timeout without changing it. Do not touch the device during that idle interval. Manual screen-off/re-enable and USB-disconnected checks remain separate user-driven tests.
+
+For manual lock precedence, start `python scripts/check-companion-lifecycle.py awake-locked --wait-seconds 120`, then press Power yourself within that interval. The probe verifies lease revocation, locked-start/renewal rejection and the operation-scoped lock policy. It never wakes or unlocks the phone.
 
 ### Security model
 
@@ -103,7 +133,7 @@ The exact IDs above are examples; they deliberately expire when the UI changes. 
 - Every request requires a random 256-bit token. Failed authentication is delayed and rejected.
 - Android itself protects the exported accessibility service with `BIND_ACCESSIBILITY_SERVICE` and the user-facing consent flow.
 - Node references are in memory only. They are tied to a snapshot generation, package, window and element fingerprint.
-- The service refuses a locked device and revalidates the active window and selected element immediately before acting.
+- Status and redacted metadata inspection remain available while locked. UI changes require unlock, with lock state rechecked immediately before dispatch. Lock observation invalidates cached node IDs.
 - Screen content and text entered are not logged. Successful text responses return only character count and verification status.
 - Token rotation is visible and confirmed in the companion screen. Rotating invalidates the Termux client until it is paired again.
 

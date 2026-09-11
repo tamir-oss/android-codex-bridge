@@ -90,9 +90,11 @@ In the original phone setup, this included opening apps, inspecting the screen, 
 
 This repository contains documentation, an environment checker, diagnostics, an interactive setup checklist, a bounded non-root screen-recording tool, and source for an optional structured-UI companion. The checklist offers guidance and a settings-opening action; it is not an automatic installer or repair engine.
 
-The companion is built on a development computer, installed with ADB, enabled by the user in Android Accessibility settings, then used locally from Termux with `android-ui`. It listens only on `127.0.0.1`, requires a 256-bit app-private token on every request, and returns structured JSON. It refuses operations while the device is locked and rejects stale element identifiers.
+The companion is built on a development computer, installed with ADB, enabled by the user in Android Accessibility settings, then used locally from Termux with `android-ui`. It listens only on `127.0.0.1`, requires a 256-bit app-private token on every request, and returns structured JSON. Its operation-scoped lock policy keeps status and metadata inspection available while locked; UI changes require a verified unlocked window. It does not stop Termux background work and rejects stale element identifiers.
 
 The next product work should package and verify the local Codex environment and its device-control tools, then make onboarding and connection recovery easier. A graphical companion can show environment health and guide setup.
+
+For UI tasks, the companion also offers a short, renewable screen-awake lease with a visible indicator. It prevents idle screen-off only while active, without changing the global timeout or dismissing manual lock. The unified skill handles release at task end; expiry limits abandoned requests. This is not a native Codex lifecycle hook. See [usage and limitations](docs/control-extensions.md#temporary-task-screen-awake-control).
 
 Installation supports the product. Success means Codex can perform verified development tasks and authorized device actions on the phone, with the ChatGPT connection available as a way to work with it.
 

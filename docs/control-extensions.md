@@ -155,6 +155,8 @@ On the reference Nothing A059P running Android 16, the following passed on the c
 
 No real account, form submission or message was used. Manual service disablement returned connection refused. After the user re-enabled it, the existing token reconnected and the safe UI suite passed. Manual locking also passed: the awake lease was revoked, locked-start and stale-renewal requests were rejected, status/redacted inspection and a local computation still worked, and UI mutations required unlock. Normal user unlock then passed the safe UI suite without restarting or pairing again; the awake lease stayed inactive and ChatGPT foreground was restored. The final unplugged run also passed, with USB state verified disconnected before and after the safe UI suite running in Termux. The computer was used to retrieve the report after reconnection, not to perform those UI actions. This does not establish full reboot recovery or a new end-to-end test of the ChatGPT remote connection.
 
+On the reference non-root phone, a normal reboot retained companion accessibility consent and the local client successfully connected after boot. Shizuku did not survive the reboot; after the user manually restarted it through Wireless debugging, `rish` returned Android shell identity again. This is the expected non-root boundary. The post-reboot check returned ChatGPT to the foreground but did not create a new ChatGPT-to-Codex bridge session as part of the test.
+
 Run the safe on-device test from the repository in Termux:
 
 ```sh

@@ -50,10 +50,16 @@ Disconnected-test preparation initially failed closed with `USB_STATE_UNAVAILABL
 
 - The subsequent real unplugged run passed on 2026-09-11. The authenticated safe UI suite ran in Termux with USB reported disconnected both before and after its actions. Hebrew, English, mixed text, element click/scroll and stale/window checks passed; ChatGPT foreground was verified. The user reconnected the cable only to retrieve the result. This verifies local device-control operation without USB, not a new test of the ChatGPT remote connection or offline AI inference.
 
+## Reboot recovery
+
+- A real normal reboot passed on 2026-09-11. Android retained the user's explicit accessibility-service consent; the companion bound again, its authenticated loopback service answered from Termux, and no screen-awake lease was restored.
+- Shizuku did not run immediately after reboot, as expected on a non-root device. After the user manually started it by Wireless debugging, `rish` again returned Android `uid=2000 (shell)`. No new Codex pairing or accessibility approval was required.
+- The post-reboot check returned ChatGPT to the foreground. This validates local companion and Shizuku recovery; it does not by itself validate a new ChatGPT-to-Codex bridge session after reboot.
+
 ## Still unverified
 
 - Broader application and manufacturer compatibility.
-- Full phone reboot and unattended recovery of Shizuku/Termux; long-term Android background-process survival.
+- Unattended recovery of Shizuku/Termux and long-term Android background-process survival.
 - The combined long screen-awake retention test with USB unplugged (retention and unplugged UI operation were tested separately).
 
 Do not describe these remaining items as verified without dedicated evidence.

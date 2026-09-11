@@ -51,6 +51,8 @@ The expected non-root bridge test is an Android `shell` identity (uid 2000). A d
 
 Start Codex CLI in Termux, then add that Codex instance to the ChatGPT app using the normal authenticated bridge flow. The verification code belongs only in the private connection flow. Never put it in this repository.
 
+For the tested Linux-musl installation, start the existing Remote connection with `bash scripts/codex-remote.sh start`. After reboot this must be run manually from Termux. If a daemon is running but cannot connect, use `restart` instead. See [connection recovery](troubleshooting.md#the-chatgpt-app-cannot-see-the-local-codex-instance) for requirements and verification. This is separate from starting Shizuku.
+
 ## 6. What still requires the user
 
 The assistant cannot safely or reliably enable Developer options, approve ADB, enter pairing codes, authorize Shizuku, or grant sensitive Android permissions without visible user action. This project guides those steps and verifies their result.

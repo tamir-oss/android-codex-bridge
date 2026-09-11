@@ -22,7 +22,23 @@ Check the chain in order: Codex command available, Termux process running, `rish
 
 ## The ChatGPT app cannot see the local Codex instance
 
-Confirm that the local Codex process is running and that the authenticated bridge was added to the same ChatGPT account. Re-enter the connection flow without sharing the verification code with anyone. Check that the endpoint is local to the phone and that no stale process is holding the port.
+Check the existing connection before creating a new pairing. A running daemon alone does not prove that Remote is connected. On the tested Codex 0.153.4 Linux-musl installation, starting the daemon directly after reboot left it unable to find Linux DNS and TLS certificate paths. Ordinary Termux HTTPS still worked, but Remote token refresh failed.
+
+From Termux in this repository, use the manual compatibility launcher:
+
+```sh
+bash scripts/codex-remote.sh start
+# If a daemon is already running but localhost cannot connect:
+bash scripts/codex-remote.sh restart
+```
+
+The launcher uses the existing `proot`, Termux resolver configuration and CA bundle. It maps only the missing `/etc/resolv.conf` for the Codex process tree, preserves the account and pairing, keeps TLS verification enabled and does not expose a new network listener. Avoid broad `/usr` mappings: they interfered with Android's linker during a Shizuku regression check. It requires `proot`, Python and `flock` already installed. It does not configure boot startup or modify Shizuku, accessibility, VPN or battery settings.
+
+On the reference phone it is also installed as `codex-remote`, so `codex-remote start` is sufficient after reboot. The installed command is a copy of `scripts/codex-remote.sh`; update that copy when changing the script. To install it on another Termux environment, use `install -m 700 scripts/codex-remote.sh "$PREFIX/bin/codex-remote"`. Remove only that command to remove the shortcut.
+
+Success requires both a `connected` result and the ChatGPT app showing the existing `localhost` host green with its chats loaded. Reopen ChatGPT if it retains the old disconnected view. `status` reports daemon state only; `stop` stops that daemon. Startup output is private under `~/.local/state/android-codex-bridge/remote/`; do not publish it.
+
+After a phone reboot, open Termux and run `start` again. Restart Shizuku manually when its shell capabilities are needed. Removing the launcher does not remove Codex or its pairing. No new pairing was required in the verified recovery on 2026-09-11.
 
 ## Black screen or stale web content
 

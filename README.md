@@ -68,6 +68,8 @@ The local `rish` bridge returned an Android `shell` identity during a read-only 
 
 ## Prerequisites
 
+After a reboot, the tested setup also needs a manual Codex Remote start from Termux: `bash scripts/codex-remote.sh start`. This launcher supplies the Linux DNS paths and Termux CA bundle required by the installed Linux-musl binary. The existing ChatGPT pairing was retained during verified recovery. See [troubleshooting](docs/troubleshooting.md#the-chatgpt-app-cannot-see-the-local-codex-instance).
+
 The exact setup depends on the device and Android version. Expect to perform some steps manually:
 
 1. An Android phone without root is sufficient for the non-root path.

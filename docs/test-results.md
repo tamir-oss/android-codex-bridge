@@ -56,6 +56,14 @@ Disconnected-test preparation initially failed closed with `USB_STATE_UNAVAILABL
 - Shizuku did not run immediately after reboot, as expected on a non-root device. After the user manually started it by Wireless debugging, `rish` again returned Android `uid=2000 (shell)`. No new Codex pairing or accessibility approval was required.
 - The post-reboot check returned ChatGPT to the foreground. This validates local companion and Shizuku recovery; it does not by itself validate a new ChatGPT-to-Codex bridge session after reboot.
 
+### Subsequent ChatGPT Remote recovery (2026-09-11)
+
+- After reboot, the Codex daemon was absent. Starting it directly reported running but Remote refresh failed; ChatGPT showed `localhost` unavailable.
+- Closing and reopening ChatGPT alone did not fix the connection. Termux HTTPS succeeded independently. Runtime tracing observed missing `/etc/resolv.conf` and `/usr/local/ssl/cert.pem` in the Linux-musl Codex process.
+- Launching through existing PRoot path mappings plus explicit Termux `SSL_CERT_FILE`/`SSL_CERT_DIR` restored `status: connected`. Reopening ChatGPT then showed the original `localhost` host green and loaded its existing chat list. No account sign-in or new pairing was performed.
+- The final launcher limits PRoot to a single resolver-file mapping. Its installed `codex-remote restart` returned `connected`; under the same minimal mapping the authenticated companion status succeeded and `rish` returned `uid=2000 (shell)`. ChatGPT returned to the foreground with `localhost` green and its existing chat list visible.
+- No boot automation was enabled. This verifies Remote connectivity, chat-list retrieval and backend availability, not a new model turn or a second reboot with the launcher.
+
 ## Still unverified
 
 - Broader application and manufacturer compatibility.

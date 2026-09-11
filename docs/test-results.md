@@ -39,7 +39,8 @@ No real account, message, form submission, payment or deletion was used for test
 - Built and installed without adding Android permissions or changing timeout settings.
 - Real-device start, renewal, concurrent-start rejection, wrong-ID rejection, explicit release, abandoned-lease expiry, stale renewal rejection and Unicode input with the overlay passed.
 - Android WindowManager attributed its `mHoldScreenWindow` to `CodexTaskAwake`; USB stay-awake was off. This confirms the visible overlay, not a charger setting, held the screen.
-- Idle retention beyond the configured five-minute timeout is being tested; manual Power-button revocation still needs the user transition.
+- A 310-second idle run passed with the configured timeout unchanged at 300,000 ms and charger stay-awake disabled. Screen remained interactive/unlocked, then release removed the hold-screen window and ChatGPT foreground was verified. The idle interval was on Android Settings after leaving the harmless test screen; no account was used. The reusable test now explicitly returns to its own activity before the idle interval.
+- Manual Power-button revocation still needs the user transition.
 - The integration is skill/tool-driven with bounded expiry, not a built-in Codex task lifecycle hook.
 
 ## Still requiring a manual device transition

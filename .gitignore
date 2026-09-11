@@ -1,0 +1,21 @@
+# Local secrets and credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+
+# Local logs, screenshots, and diagnostics
+*.log
+phone-artifacts/
+diagnostics/
+local/
+
+# Android and editor output
+.gradle/
+.idea/
+build/
+captures/
+

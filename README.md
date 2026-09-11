@@ -1,6 +1,8 @@
-# Codex on Android: Local ChatGPT Bridge
+# Voice Control for Android with ChatGPT & Codex
 
-Run Codex CLI inside Termux on an Android phone and reach it from the ChatGPT app through an authenticated local bridge. The bridge lets a voice conversation in ChatGPT reach a Codex agent running on the same phone, which can then use Android control tools through Shizuku.
+Control your Android phone by speaking to the ChatGPT app, with Codex CLI running on the same phone in Termux and Android actions handled through rish and Shizuku, without root.
+
+The goal is voice-driven Android control: turning a spoken request into an action on your phone. Local development is another use of that connection. Setup checks and installation guidance help users establish and maintain it.
 
 This is an independent community project and an experimental setup. It is not an official OpenAI product or an OpenAI-supported Android distribution.
 
@@ -8,11 +10,11 @@ This is an independent community project and an experimental setup. It is not an
 
 The project started with a Codex CLI installation on a headless VPS. The ChatGPT app could connect to that Codex instance with a verification code, making it possible to control the VPS from the phone even though the VPS had no graphical interface.
 
-Before the Android setup could be bootstrapped, Developer options had to be enabled on the phone and USB debugging had to be authorized. Once ADB access from the computer was approved, ChatGPT/Codex on the computer could operate the phone, transfer the project, and install the required tools. Shizuku was installed and configured on the phone with that guidance.
-
 That led to the next question: if the ChatGPT app can reach Codex on a remote machine, can the same pattern reach Codex running locally on the phone?
 
-Codex CLI was installed in Termux. The local Codex process was then connected to Android control tools through `rish` and Shizuku. After the local Codex instance was added to the ChatGPT app through the authenticated bridge, the phone appeared as a local endpoint (`localhost`). Voice commands in the ChatGPT app could then reach the Codex process inside Termux, and that process could perform Android actions through the Shizuku bridge.
+Before the Android setup could be bootstrapped, Developer options had to be enabled on the phone and USB debugging had to be authorized. Once ADB access from the computer was approved, ChatGPT/Codex on the computer could operate the phone, transfer the project, and install the required tools. Shizuku was installed and configured on the phone with that guidance.
+
+Codex CLI was installed in Termux. The local Codex process was then connected to Android control tools through `rish` and Shizuku. After the local Codex instance was added to the ChatGPT app through the authenticated bridge, the phone appeared under the connection label `localhost`. This label alone does not establish that all ChatGPT traffic stays on the device or that the connection works offline. Voice commands in the ChatGPT app could then reach the Codex process inside Termux, and that process could perform Android actions through the Shizuku bridge.
 
 The resulting path is:
 
@@ -57,11 +59,19 @@ The exact setup depends on the device and Android version. Expect to perform som
 
 Do not publish a verification code, password, session token, API key, or private host details in this repository.
 
-## Current scope
+## Android control is the product
 
-This repository documents and validates the setup. It does not claim that Android can enable every required system setting automatically. Developer options, wireless debugging, Shizuku startup, package installation, and sensitive permissions may still require explicit user action.
+The intended experience is: speak a request in ChatGPT, send it to the connected Codex instance on the phone, and use the authorized Android tools to carry it out.
 
-The repository includes a first setup assistant that checks the environment, explains what is missing, can open the Developer options screen when requested, and verifies each step. It guides the user rather than silently bypassing Android security. A graphical Android setup app can build on this behavior later.
+In the original phone setup, this included opening apps, inspecting the screen, navigating a browser, and managing a local development server. These examples describe the existing proof of concept; this repository does not yet package all of those control tools for a fresh installation.
+
+## What this repository currently provides
+
+This repository contains documentation, an environment checker, diagnostics, and an interactive setup checklist. The checklist offers guidance and a settings-opening action; it is not an automatic installer or repair engine.
+
+The next product work should package and verify the Android control path, then make onboarding and connection recovery easier. A graphical companion can show connection health and guide setup while ChatGPT remains the voice interface.
+
+Installation is an enabling feature of the Android control product. Success means a spoken request reaches the correct phone and produces a verified action, not merely that packages are installed.
 
 ## Try the read-only checker
 
@@ -86,4 +96,4 @@ Codex can execute commands with the permissions available to its bridge. Review 
 
 ## Status
 
-MVP on one device. The repository has setup documentation, compatibility notes, a read-only checker, a diagnostic report, a guided checklist, and a shell-syntax CI check. Broader device compatibility and a graphical Android setup app remain future work.
+Android control proof of concept demonstrated on one device. This repository currently distributes documentation and setup diagnostics; a reproducible control-tool package, guided installation and recovery, and broader device testing remain future work.

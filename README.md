@@ -63,6 +63,23 @@ This repository documents and validates the setup. It does not claim that Androi
 
 The planned next component is a setup assistant that checks the environment, explains what is missing, opens the relevant Android settings screens, and verifies each step. It should guide the user rather than silently bypass Android security.
 
+## Try the read-only checker
+
+From the repository directory in Termux:
+
+```sh
+bash scripts/check-environment.sh
+bash scripts/diagnose.sh
+```
+
+For an interactive checklist that leaves security-sensitive actions to the user:
+
+```sh
+bash scripts/setup-assistant.sh
+```
+
+See [the setup guide](docs/setup-termux.md), [the architecture notes](docs/architecture.md), [compatibility notes](docs/compatibility.md), [troubleshooting](docs/troubleshooting.md), and the [demo script](docs/demo-script.md).
+
 ## Safety
 
 Codex can execute commands with the permissions available to its bridge. Review commands before allowing them to run, keep Shizuku authorization limited to trusted applications, and never share authentication material in issues, screenshots, videos, or commits.

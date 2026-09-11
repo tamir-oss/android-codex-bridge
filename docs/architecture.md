@@ -19,6 +19,24 @@ The ChatGPT app is the conversational and voice interface. The authenticated bri
 
 Codex runs inside Termux and uses the tools available to its process. `rish` is the Shizuku shell bridge exported to Termux. Shizuku provides authorized Android operations without requiring root; it does not turn the device into a rooted device.
 
+## Structured-UI companion
+
+The optional companion is a separate Android application with a user-enabled `AccessibilityService`. It complements the shell path for UI element discovery, supported accessibility actions and Unicode text entry:
+
+```text
+Codex in Termux
+  -> android-ui client
+  -> TCP 127.0.0.1:8765 with per-request token
+  -> companion AccessibilityService
+  -> fresh Android accessibility node
+```
+
+The listener binds explicitly to IPv4 loopback and is not reachable through Wi-Fi, cellular data, Tailscale or another device. Android requires the application to declare network permission even for this local socket. A random 256-bit token is generated in app-private storage; Termux receives it only after the user copies it in the visible companion screen. The client saves it as mode 0600 and clears the clipboard after pairing.
+
+The service snapshots the active window, returns opaque short-lived node IDs, and records only their in-memory path and fingerprint. Before a command it verifies unlock state, snapshot generation, package, window, class, view ID and bounds. If focusing an editable field changes its bounds, the service re-identifies exactly one matching view ID before using `ACTION_SET_TEXT`. It then reads the field again to verify the result. Screen text and typed text are not written to logs by default.
+
+The companion is removable and independent. Disabling its accessibility service or uninstalling the app leaves Termux, Codex, Shizuku, `rish`, the keyboard and the existing control tool intact.
+
 ## Initial bootstrap
 
 The first setup used a computer. Developer options and USB debugging were enabled on the phone, the computer was authorized through ADB, and the computer-side ChatGPT/Codex session installed the project and command-line tools. Shizuku was then installed and configured on the phone, with ChatGPT guiding the setup.
@@ -37,4 +55,4 @@ The bridge runs with the permissions granted to Termux and Shizuku. Developer op
 
 ## Control extensions
 
-See [control extensions](control-extensions.md) for recording usage, API compatibility, verification limits and the companion development handoff.
+See [control extensions](control-extensions.md) for recording usage, API compatibility, companion commands, build/install steps and verification limits.

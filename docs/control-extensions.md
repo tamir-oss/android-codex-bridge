@@ -35,17 +35,125 @@ Availability of an executable does not establish that every API works. Permissio
 Official source and compatibility guidance: https://github.com/termux/termux-api
 F-Droid distribution: https://f-droid.org/en/packages/com.termux.api/
 
-## Hebrew input and structured UI companion — pending
+## Hebrew input and structured UI companion
 
-No companion accessibility APK has been built or enabled. Use a laptop with an Android SDK and authorized USB ADB for its build/install/debug cycle. Runtime must remain usable after USB is disconnected. Do not replace the existing rish tool or alter the current keyboard as a shortcut.
+The companion under `companion/` is an isolated Android app with a visible test activity and an explicitly enabled accessibility service. It supplements the existing `rish`/Shizuku tool; it does not replace it or change the active keyboard.
 
-Implementation handoff:
+### Build and install
 
-1. Build an isolated companion with a visible test activity containing Hebrew/English text fields and buttons. Define an authenticated local-only command transport before exposing control; reject unauthorized callers and do not create an unauthenticated exported receiver or HTTP endpoint.
-2. Add an explicitly enabled AccessibilityService that returns structured nodes and supported actions, supports ACTION_SET_TEXT on eligible editable nodes, and reports unsupported operations. Avoid storing screen content or typed text in logs.
-3. Address nodes by current window and node identity, revalidate focus before every action, and reject stale nodes, locked screens and unsupported actions. Report completion only after fresh inspection.
-4. Preserve existing enabled services and the chosen keyboard. Provide a clear disable/uninstall path. Accessibility enablement must follow Android's user-facing consent flow.
-5. Verify Hebrew, English and mixed text, wrong/stale focus, service disabled, reconnect, lock/unlock and USB disconnect on the test activity before using another app. Never send a message as a typing test.
-6. Run existing Shizuku status/UI/screenshot checks before and after. Publish source, reproducible build steps and actual test results before calling the companion complete.
+The reference build uses Java, Android SDK platform 23, `aapt`, `dx`, `zipalign` and `apksigner`. Override their paths with the environment variables documented in `scripts/build-companion.sh` when the SDK layout differs.
+
+```sh
+bash scripts/build-companion.sh
+bash scripts/install-companion.sh
+```
+
+The build creates a local development signing key under ignored `local/` storage and emits:
+
+```text
+companion/build/android-codex-bridge-companion.apk
+```
+
+On the phone, open the companion and tap **פתיחת הגדרות נגישות**. Android must show and the user must approve the accessibility service. The installer never enables it silently.
+
+From the repository in Termux, install the client and Codex skill:
+
+```sh
+bash scripts/install-termux-client.sh
+bash scripts/install-codex-skill.sh
+```
+
+There is one skill, `android-local-control`, routing both backends. The skill installer requires the existing `android-local-control/scripts/phone-control` tool and never overwrites it. It backs up the previous instructions under `~/.codex/skill-backups/`, installs the unified instructions, and moves the retired `android-structured-ui` skill outside skill discovery. Start a fresh Codex task to pick up the changed skill inventory; no backend restart is needed for a Markdown instruction change.
+
+In the companion tap **העתק מפתח צימוד ל־Termux**, then immediately run:
+
+```sh
+android-ui pair-from-clipboard
+android-ui status
+```
+
+The pairing command validates a 64-character hexadecimal token, stores it only in `~/.config/android-codex-bridge/token` with mode 0600, and clears the clipboard. Do not print or share the token.
+
+### Commands
+
+Inspect the current screen:
+
+```sh
+android-ui inspect
+android-ui inspect --no-text
+```
+
+Every node includes an opaque ID, class, optional Android view ID, bounds, state and supported actions. Use an ID only from the latest inspection and act immediately:
+
+```sh
+android-ui set-text n123-4 'שלום Codex 123'
+android-ui click n124-9
+android-ui focus n125-2
+android-ui scroll-forward n126-0
+android-ui scroll-backward n127-0
+```
+
+The exact IDs above are examples; they deliberately expire when the UI changes. Before an action, verify `android-ui status` reports `locked: false` and the intended package. After it, inspect again and verify the visible result. `--compact` produces one-line JSON for an agent.
+
+`set-text` uses Android `ACTION_SET_TEXT`, so Hebrew, English and mixed text do not pass through `input text` and do not require replacing the keyboard. If the app does not expose an editable field with `ACTION_SET_TEXT`, the command returns `SET_TEXT_UNSUPPORTED`. Other important errors include `DEVICE_LOCKED`, `NO_ACTIVE_WINDOW`, `STALE_NODE`, `STALE_WINDOW`, `FOCUS_CHANGED`, `UNAUTHORIZED` and `CONNECTION_UNAVAILABLE`.
+
+### Security model
+
+- The service binds only to `127.0.0.1:8765`; it is not exposed to LAN, cellular data, Tailscale or the public internet.
+- Every request requires a random 256-bit token. Failed authentication is delayed and rejected.
+- Android itself protects the exported accessibility service with `BIND_ACCESSIBILITY_SERVICE` and the user-facing consent flow.
+- Node references are in memory only. They are tied to a snapshot generation, package, window and element fingerprint.
+- The service refuses a locked device and revalidates the active window and selected element immediately before acting.
+- Screen content and text entered are not logged. Successful text responses return only character count and verification status.
+- Token rotation is visible and confirmed in the companion screen. Rotating invalidates the Termux client until it is paired again.
+
+Loopback plus authentication was chosen because Android 16 SELinux prevented Termux from connecting to the app's abstract Unix-domain socket in the reference device. A local TCP socket works across the app sandbox boundary while remaining unreachable from other machines.
+
+### Test status
+
+On the reference Nothing A059P running Android 16, the following passed on the companion's own harmless test screen:
+
+- service state and active-window checks;
+- invalid-token rejection and a following authenticated reconnect;
+- structured field and button discovery;
+- Hebrew, English and mixed `ACTION_SET_TEXT` with exact readback;
+- button click with fresh visible-result verification;
+- scrolling followed by fresh inspection;
+- stale-node rejection and changed-window rejection;
+- multiple independent client connections;
+- the pre-existing Shizuku `phone-control status` check after installation.
+
+No real account, form submission or message was used. Manual service disablement returned connection refused. After the user re-enabled it, the existing token reconnected and the safe UI suite passed. The remaining manual transitions are normal lock/unlock and the final run after unplugging USB. They must be recorded as untested until exercised; the design has no ADB or computer dependency at runtime.
+
+Run the safe on-device test from the repository in Termux:
+
+```sh
+python scripts/test-companion-on-device.py
+```
+
+Lifecycle checks are explicitly user-driven; they never toggle accessibility, lock or unlock the device:
+
+```sh
+python scripts/check-companion-lifecycle.py disabled
+# After manually re-enabling the service:
+python scripts/check-companion-lifecycle.py reconnected
+# While locked, from an already running Termux process:
+python scripts/check-companion-lifecycle.py locked
+# After normal user unlock:
+python scripts/check-companion-lifecycle.py unlocked
+# Start, then unplug within 120 seconds; keep the phone unlocked:
+python scripts/check-companion-lifecycle.py usb-detached --wait-seconds 120 \
+  --report "$HOME/.codex/phone-artifacts/companion-usb-test.json"
+```
+
+The last check reads the current Android USB connection state through local Shizuku before and after running the harmless test suite inside Termux. Unknown USB state is a failure, never assumed to mean disconnected. Reports contain result labels only. After unlocked tests the runner attempts to restore ChatGPT and reports whether the foreground was verified. This does not test or require a full phone reboot.
+
+### Disable and remove
+
+1. In Android Accessibility settings, turn off **Codex local UI control**.
+2. Uninstall the Android app normally, or from an authorized computer run `adb uninstall com.tamir.androidcodexbridge`.
+3. In Termux, remove only `$PREFIX/bin/android-ui` and `~/.config/android-codex-bridge/token` if no longer wanted. Keep the unified `android-local-control` skill and its existing shell tool; it remains useful with Shizuku alone. Previous skill instructions are recoverable from `~/.codex/skill-backups/`.
+
+These steps do not remove Termux, Codex, Shizuku, `rish`, the existing phone-control skill or the keyboard.
 
 Android action reference: https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction

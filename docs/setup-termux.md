@@ -55,7 +55,31 @@ Start Codex CLI in Termux, then add that Codex instance to the ChatGPT app using
 
 The assistant cannot safely or reliably enable Developer options, approve ADB, enter pairing codes, authorize Shizuku, or grant sensitive Android permissions without visible user action. This project guides those steps and verifies their result.
 
+## 7. Add structured UI and Unicode text entry
+
+This optional layer is installed alongside `rish`/Shizuku. Build and install the APK from an authorized computer:
+
+```sh
+bash scripts/build-companion.sh
+bash scripts/install-companion.sh
+```
+
+On the phone, open the companion and use its button to open Accessibility settings. Explicitly enable **Codex local UI control** after reviewing Android's warning.
+
+Then, from the repository in Termux:
+
+```sh
+bash scripts/install-termux-client.sh
+bash scripts/install-codex-skill.sh
+```
+
+Copy the pairing token with the visible companion button and immediately run `android-ui pair-from-clipboard`. The command stores the token privately and clears the clipboard. Verify with `android-ui status`, then follow the inspect/action/inspect loop in [control extensions](control-extensions.md).
+
+The skill installer consolidates both tools under the existing `android-local-control` skill and preserves its shell executable. It archives the older accessibility-only skill under `~/.codex/skill-backups/`. This is an upgrade path for an existing `phone-control` installation, not an installer for the original shell backend.
+
+USB is used only for build/install/debug. Once the APK, client and skill are installed and paired, `android-ui` communicates entirely inside the phone over authenticated loopback.
+
 
 ## Control extensions
 
-See [control extensions](control-extensions.md) for recording usage, API compatibility, verification limits and the companion development handoff.
+See [control extensions](control-extensions.md) for recording usage, API compatibility, companion commands and verification limits.

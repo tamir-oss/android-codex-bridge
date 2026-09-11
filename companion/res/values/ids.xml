@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="input_hebrew" type="id" />
+    <item name="input_english" type="id" />
+    <item name="input_mixed" type="id" />
+    <item name="button_primary" type="id" />
+    <item name="button_clear" type="id" />
+    <item name="button_bottom" type="id" />
+    <item name="service_status" type="id" />
+</resources>

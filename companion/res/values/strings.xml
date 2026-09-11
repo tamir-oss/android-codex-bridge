@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Android Codex Bridge</string>
+    <string name="service_name">Codex local UI control</string>
+    <string name="accessibility_description">Local, Termux-only structured UI control for Codex. It does not expose a network server.</string>
+</resources>

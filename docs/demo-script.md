@@ -12,7 +12,9 @@ This sequence demonstrates the idea without exposing authentication material.
 6. In the ChatGPT app, speak a harmless request such as asking Codex to list the project directory.
 7. Show the request reaching the local Codex instance and the resulting read-only output.
 8. Explain the path: ChatGPT voice → authenticated bridge → local Codex → Termux → rish/Shizuku → Android.
-9. End with the limitations: setup and sensitive permissions still require explicit user action.
+9. On the companion's test screen only, inspect the UI and enter harmless Hebrew text with `android-ui set-text`, then show the fresh verification result.
+10. Explain that the accessibility path is local-only, separately authenticated and removable.
+11. End with the limitations: setup and sensitive permissions still require explicit user action.
 
 ## Do not record
 

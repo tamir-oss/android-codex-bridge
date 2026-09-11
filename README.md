@@ -33,6 +33,22 @@ Codex CLI in Termux (same Android phone)
 rish -> Shizuku -> Android shell / Android APIs
 ```
 
+For precise screen elements and Unicode text, the optional companion adds a second, local-only path:
+
+```text
+Codex CLI in Termux
+        |
+        v
+android-ui -> authenticated 127.0.0.1 socket
+        |
+        v
+Android AccessibilityService -> current UI element
+```
+
+The companion does not replace `rish`, Shizuku, the existing control tool, or the user's keyboard.
+
+One `android-local-control` skill chooses between both tools: accessibility for Unicode and identified elements; Shizuku for app launching, navigation, capture and shell operations. The skill migration preserves the existing `phone-control` executable and archives previous instructions outside the active skills directory.
+
 ## What has been verified
 
 The proof of concept has been exercised on one non-root Android phone. The tested environment includes:
@@ -44,6 +60,9 @@ The proof of concept has been exercised on one non-root Android phone. The teste
 - Node.js and npm
 - Git and Python
 - the ChatGPT app connection to the local Codex endpoint
+- an explicitly enabled accessibility companion for structured UI inspection
+- Hebrew, English and mixed-text entry through Android `ACTION_SET_TEXT`
+- element click, scroll, stale-node rejection and changed-window rejection
 
 The local `rish` bridge returned an Android `shell` identity during a read-only check. This confirms an authenticated shell-level bridge, not root access. Reproducibility across Android versions and device manufacturers has not yet been established.
 
@@ -69,7 +88,9 @@ In the original phone setup, this included opening apps, inspecting the screen, 
 
 ## What this repository currently provides
 
-This repository contains documentation, an environment checker, diagnostics, an interactive setup checklist, and a bounded non-root screen-recording tool. The checklist offers guidance and a settings-opening action; it is not an automatic installer or repair engine.
+This repository contains documentation, an environment checker, diagnostics, an interactive setup checklist, a bounded non-root screen-recording tool, and source for an optional structured-UI companion. The checklist offers guidance and a settings-opening action; it is not an automatic installer or repair engine.
+
+The companion is built on a development computer, installed with ADB, enabled by the user in Android Accessibility settings, then used locally from Termux with `android-ui`. It listens only on `127.0.0.1`, requires a 256-bit app-private token on every request, and returns structured JSON. It refuses operations while the device is locked and rejects stale element identifiers.
 
 The next product work should package and verify the local Codex environment and its device-control tools, then make onboarding and connection recovery easier. A graphical companion can show environment health and guide setup.
 
@@ -90,7 +111,7 @@ For an interactive checklist that leaves security-sensitive actions to the user:
 bash scripts/setup-assistant.sh
 ```
 
-See [the setup guide](docs/setup-termux.md), [the architecture notes](docs/architecture.md), [compatibility notes](docs/compatibility.md), [troubleshooting](docs/troubleshooting.md), and the [demo script](docs/demo-script.md).
+See [the setup guide](docs/setup-termux.md), [the architecture notes](docs/architecture.md), [compatibility notes](docs/compatibility.md), [current test results](docs/test-results.md), [troubleshooting](docs/troubleshooting.md), and the [demo script](docs/demo-script.md).
 
 ## Safety
 
@@ -98,8 +119,8 @@ Codex can execute commands with the permissions available to its bridge. Review 
 
 ## Status
 
-Android control proof of concept demonstrated on one device. This repository currently distributes documentation and setup diagnostics; a reproducible control-tool package, guided installation and recovery, and broader device testing remain future work.
+Android control proof of concept demonstrated on one device. The structured-UI companion was built and exercised on a Nothing A059P running Android 16: Hebrew, English and mixed text, button click, scrolling, stale element handling and window-change handling passed on its test activity. The existing Shizuku control tool also passed a post-install status check. Service-disabled, lock/unlock and USB-disconnected checks are tracked separately in the test-status section because they require visible user/device transitions.
 
 ## Additional control tools
 
-See [control extensions](docs/control-extensions.md) for the tested screen-recording tool, Termux:API integration and the pending Hebrew/structured-UI companion. Installation is a supporting part of the local development and device-control environment.
+See [control extensions](docs/control-extensions.md) for the tested screen-recording tool, Termux:API integration, companion build/install instructions, command examples, security design and current test status. Installation is a supporting part of the local development and device-control environment.

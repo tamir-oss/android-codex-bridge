@@ -53,6 +53,13 @@ def check(phase, wait_seconds):
             time.sleep(2)
 
     status = TEST.call('status')
+    if phase == 'locked' and wait_seconds:
+        deadline = time.monotonic() + wait_seconds
+        while not status.get('locked'):
+            if time.monotonic() >= deadline:
+                raise RuntimeError('EXPECTED_DEVICE_LOCKED')
+            time.sleep(1)
+            status = TEST.call('status')
     if phase == 'locked':
         if not status.get('locked'):
             raise RuntimeError('EXPECTED_DEVICE_LOCKED')

@@ -137,8 +137,9 @@ Lifecycle checks are explicitly user-driven; they never toggle accessibility, lo
 python scripts/check-companion-lifecycle.py disabled
 # After manually re-enabling the service:
 python scripts/check-companion-lifecycle.py reconnected
-# While locked, from an already running Termux process:
-python scripts/check-companion-lifecycle.py locked
+# Start, then lock normally within 120 seconds; do not unlock until results are checked:
+python scripts/check-companion-lifecycle.py locked --wait-seconds 120 \
+  --report "$HOME/.codex/phone-artifacts/companion-lock-test.json"
 # After normal user unlock:
 python scripts/check-companion-lifecycle.py unlocked
 # Start, then unplug within 120 seconds; keep the phone unlocked:

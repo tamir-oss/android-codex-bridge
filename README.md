@@ -61,7 +61,7 @@ Do not publish a verification code, password, session token, API key, or private
 
 This repository documents and validates the setup. It does not claim that Android can enable every required system setting automatically. Developer options, wireless debugging, Shizuku startup, package installation, and sensitive permissions may still require explicit user action.
 
-The planned next component is a setup assistant that checks the environment, explains what is missing, opens the relevant Android settings screens, and verifies each step. It should guide the user rather than silently bypass Android security.
+The repository includes a first setup assistant that checks the environment, explains what is missing, can open the Developer options screen when requested, and verifies each step. It guides the user rather than silently bypassing Android security. A graphical Android setup app can build on this behavior later.
 
 ## Try the read-only checker
 
@@ -86,4 +86,4 @@ Codex can execute commands with the permissions available to its bridge. Review 
 
 ## Status
 
-Proof of concept on one device. Installation documentation, device compatibility checks, and the guided setup assistant are still being developed.
+MVP on one device. The repository has setup documentation, compatibility notes, a read-only checker, a diagnostic report, a guided checklist, and a shell-syntax CI check. Broader device compatibility and a graphical Android setup app remain future work.

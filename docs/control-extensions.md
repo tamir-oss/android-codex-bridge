@@ -153,7 +153,7 @@ On the reference Nothing A059P running Android 16, the following passed on the c
 - multiple independent client connections;
 - the pre-existing Shizuku `phone-control status` check after installation.
 
-No real account, form submission or message was used. Manual service disablement returned connection refused. After the user re-enabled it, the existing token reconnected and the safe UI suite passed. Manual locking also passed: the awake lease was revoked, locked-start and stale-renewal requests were rejected, status/redacted inspection and a local computation still worked, and UI mutations required unlock. The remaining transitions are normal unlock/UI recovery and the final run after unplugging USB. They must be recorded as untested until exercised; the design has no ADB or computer dependency at runtime.
+No real account, form submission or message was used. Manual service disablement returned connection refused. After the user re-enabled it, the existing token reconnected and the safe UI suite passed. Manual locking also passed: the awake lease was revoked, locked-start and stale-renewal requests were rejected, status/redacted inspection and a local computation still worked, and UI mutations required unlock. Normal user unlock then passed the safe UI suite without restarting or pairing again; the awake lease stayed inactive and ChatGPT foreground was restored. The final run after unplugging USB remains untested until exercised; the design has no ADB or computer dependency at runtime.
 
 Run the safe on-device test from the repository in Termux:
 

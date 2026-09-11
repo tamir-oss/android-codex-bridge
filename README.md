@@ -121,7 +121,7 @@ Codex can execute commands with the permissions available to its bridge. Review 
 
 ## Status
 
-Android control proof of concept demonstrated on one device. The structured-UI companion was built and exercised on a Nothing A059P running Android 16: Hebrew, English and mixed text, button click, scrolling, stale element handling and window-change handling passed on its test activity. The existing Shizuku control tool also passed a post-install status check. Service-disabled, lock/unlock and USB-disconnected checks are tracked separately in the test-status section because they require visible user/device transitions.
+Android control proof of concept demonstrated on one device. The structured-UI companion was built and exercised on a Nothing A059P running Android 16: Hebrew, English and mixed text, button click, scrolling, stale element handling and window-change handling passed on its test activity. The existing Shizuku control tool also passed a post-install status check. Manual service disable/re-enable, lock/unlock recovery and the safe UI suite with USB disconnected passed. Temporary screen-awake retention, expiry and manual-lock precedence also passed. Full phone reboot, unattended recovery and broader device compatibility remain unverified; see the detailed test status.
 
 ## Additional control tools
 

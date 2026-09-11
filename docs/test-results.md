@@ -44,11 +44,16 @@ No real account, message, form submission, payment or deletion was used for test
 - Normal user unlock passed (2026-09-11): the lease did not reactivate automatically, the authenticated safe UI suite passed with fresh snapshots and Unicode entry/click/scroll, and ChatGPT foreground was verified. No service restart or new pairing was needed.
 - The integration is skill/tool-driven with bounded expiry, not a built-in Codex task lifecycle hook.
 
-## Still requiring a manual device transition
+## USB-disconnected verification
 
-Disconnected-test preparation failed closed with `USB_STATE_UNAVAILABLE` while the cable was still attached: USB dumps were intermittently incomplete through the rish subprocess capture. The probe now filters the current state on Android before transport, accommodates whitespace trimming and briefly allows output delivery before process teardown. Valid connected samples were observed, but isolated incomplete samples still occurred; the probe now retries at most five read-only samples and still fails if none is valid. This preparation does not prove disconnected operation.
+Disconnected-test preparation initially failed closed with `USB_STATE_UNAVAILABLE` while the cable was still attached: USB dumps were intermittently incomplete through the rish subprocess capture. The probe now filters the current state on Android before transport, accommodates whitespace trimming and briefly allows output delivery before process teardown. It retries at most five read-only samples and still fails if none is valid.
 
-- Disconnect USB and run the safe test from Termux to prove the computer is not a runtime dependency.
+- The subsequent real unplugged run passed on 2026-09-11. The authenticated safe UI suite ran in Termux with USB reported disconnected both before and after its actions. Hebrew, English, mixed text, element click/scroll and stale/window checks passed; ChatGPT foreground was verified. The user reconnected the cable only to retrieve the result. This verifies local device-control operation without USB, not a new test of the ChatGPT remote connection or offline AI inference.
+
+## Still unverified
+
 - Broader application and manufacturer compatibility.
+- Full phone reboot and unattended recovery of Shizuku/Termux; long-term Android background-process survival.
+- The combined long screen-awake retention test with USB unplugged (retention and unplugged UI operation were tested separately).
 
-Do not describe an item in this final section as verified until the corresponding device transition has been observed.
+Do not describe these remaining items as verified without dedicated evidence.

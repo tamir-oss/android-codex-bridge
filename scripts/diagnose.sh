@@ -28,8 +28,12 @@ done
 
 printf '\nBridge:\n'
 if command -v rish >/dev/null 2>&1; then
-  printf '  rish uid: '
-  timeout 5 rish -c 'id -u' 2>/dev/null | tr -d '\r' | head -n 1 || printf 'unavailable\n'
+  RISH_UID=$(timeout 5 rish -c 'id -u' 2>/dev/null | tr -d '\r' | head -n 1 || true)
+  if [ -n "$RISH_UID" ]; then
+    printf '  rish uid: %s\n' "$RISH_UID"
+  else
+    printf '  rish uid: unavailable\n'
+  fi
 else
   printf '  rish unavailable\n'
 fi

@@ -16,7 +16,7 @@ Reference device: Nothing A059P (`Asteroids`), Android 16 / API 36, 1080x2392, n
 ## Verified in practice
 
 - APK build and v1/v2/v3 signature verification.
-- Twelve host-side protocol/token, awake-CLI validation/routing, migration-preservation and USB-state parser tests.
+- Fifteen host-side protocol/token, awake-CLI validation/routing, migration-preservation and USB-state parser/retry tests.
 - Unified skill installed on the reference phone; the original `phone-control` SHA-256 remained identical and a fresh Shizuku status check succeeded. Previous skill instructions were archived outside active skill discovery.
 - Service state, unlocked state and active package readback.
 - Invalid-token rejection followed by successful authenticated reconnect.
@@ -45,6 +45,8 @@ No real account, message, form submission, payment or deletion was used for test
 - The integration is skill/tool-driven with bounded expiry, not a built-in Codex task lifecycle hook.
 
 ## Still requiring a manual device transition
+
+Disconnected-test preparation failed closed with `USB_STATE_UNAVAILABLE` while the cable was still attached: USB dumps were intermittently incomplete through the rish subprocess capture. The probe now filters the current state on Android before transport, accommodates whitespace trimming and briefly allows output delivery before process teardown. Valid connected samples were observed, but isolated incomplete samples still occurred; the probe now retries at most five read-only samples and still fails if none is valid. This preparation does not prove disconnected operation.
 
 - Disconnect USB and run the safe test from Termux to prove the computer is not a runtime dependency.
 - Broader application and manufacturer compatibility.

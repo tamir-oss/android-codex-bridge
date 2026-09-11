@@ -19,10 +19,24 @@ SPEC.loader.exec_module(TEST)
 
 def usb_connected(dump):
     # First connected field is the current USB device state in dumpsys usb.
-    match = re.search(r'^\s+connected=(true|false)\s*$', dump, re.MULTILINE)
+    match = re.search(r'^[ \t]*connected=(true|false)[ \t]*$', dump, re.MULTILINE)
     if not match:
         raise RuntimeError('USB_STATE_UNAVAILABLE')
     return match.group(1) == 'true'
+
+
+def read_usb_connected():
+    # Filter on Android before crossing rish: large dumps were truncated in real
+    # subprocess captures. Keep only the first current-state line, not history.
+    # The brief remote delay lets rish forward its tiny output before teardown.
+    for attempt in range(5):
+        output = TEST.rish("dumpsys usb | grep -m 1 '^[[:space:]]*connected='; sleep 0.3")
+        try:
+            return usb_connected(output)
+        except RuntimeError:
+            if attempt == 4:
+                raise
+            time.sleep(0.3)
 
 
 def restore_chatgpt():
@@ -65,7 +79,7 @@ def check(phase, wait_seconds):
 
     if phase == 'usb-detached':
         deadline = time.monotonic() + wait_seconds
-        while usb_connected(TEST.rish('dumpsys usb')):
+        while read_usb_connected():
             if time.monotonic() >= deadline:
                 raise RuntimeError('USB_STILL_CONNECTED')
             time.sleep(2)
@@ -104,7 +118,7 @@ def check(phase, wait_seconds):
         TEST.main()
     results = ['authenticated_connection', 'unlocked', 'safe_ui_suite']
     if phase == 'usb-detached':
-        if usb_connected(TEST.rish('dumpsys usb')):
+        if read_usb_connected():
             raise RuntimeError('USB_RECONNECTED_DURING_TEST')
         results.append('usb_disconnected_before_and_after')
     return results

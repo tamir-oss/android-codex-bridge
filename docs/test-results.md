@@ -40,12 +40,12 @@ No real account, message, form submission, payment or deletion was used for test
 - Real-device start, renewal, concurrent-start rejection, wrong-ID rejection, explicit release, abandoned-lease expiry, stale renewal rejection and Unicode input with the overlay passed.
 - Android WindowManager attributed its `mHoldScreenWindow` to `CodexTaskAwake`; USB stay-awake was off. This confirms the visible overlay, not a charger setting, held the screen.
 - A 310-second idle run passed with the configured timeout unchanged at 300,000 ms and charger stay-awake disabled. Screen remained interactive/unlocked, then release removed the hold-screen window and ChatGPT foreground was verified. The idle interval was on Android Settings after leaving the harmless test screen; no account was used. The reusable test now explicitly returns to its own activity before the idle interval.
-- Manual Power-button revocation still needs the user transition.
+- Manual Power-button lock passed (2026-09-11): the lease was revoked, stale renewal and a new start while locked were rejected, authenticated status/redacted inspection remained available, UI mutation required unlock, and local Termux computation completed. Fresh Android diagnostics showed keyguard locked, `mHoldScreenWindow=null`, and the device dozing. Normal unlock/UI recovery is the next separate check.
 - The integration is skill/tool-driven with bounded expiry, not a built-in Codex task lifecycle hook.
 
 ## Still requiring a manual device transition
 
-- Lock the phone, confirm authenticated status and redacted inspection still work, verify UI mutations require unlock and local Termux computation continues, then unlock normally and confirm UI recovery. This is the v0.2 operation-scoped policy; older blanket-rejection probes do not validate it.
+- Unlock normally after the successful lock test and confirm UI recovery with fresh nodes. Do not infer recovery merely from the passing locked-state probe.
 - Disconnect USB and run the safe test from Termux to prove the computer is not a runtime dependency.
 - Broader application and manufacturer compatibility.
 

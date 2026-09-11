@@ -55,3 +55,7 @@ Start Codex CLI in Termux, then add that Codex instance to the ChatGPT app using
 
 The assistant cannot safely or reliably enable Developer options, approve ADB, enter pairing codes, authorize Shizuku, or grant sensitive Android permissions without visible user action. This project guides those steps and verifies their result.
 
+
+## Control extensions
+
+See [control extensions](control-extensions.md) for recording usage, API compatibility, verification limits and the companion development handoff.

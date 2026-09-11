@@ -19,3 +19,7 @@ local/
 build/
 captures/
 
+
+__pycache__/
+*.pyc
+*.mp4

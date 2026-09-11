@@ -15,3 +15,7 @@ Compatibility is not established for every Android device. Reports should includ
 
 Known variables include battery optimization, vendor changes to Developer options, permission monitoring, and whether the device stops Shizuku after reboot. The setup assistant should report these conditions instead of silently changing them.
 
+
+## Control extensions
+
+See [control extensions](control-extensions.md) for recording usage, API compatibility, verification limits and the companion development handoff.

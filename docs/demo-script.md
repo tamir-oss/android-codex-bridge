@@ -22,3 +22,7 @@ This sequence demonstrates the idea without exposing authentication material.
 - destructive commands
 - a claim that this is official OpenAI support
 
+
+## Control extensions
+
+See [control extensions](control-extensions.md) for recording usage, API compatibility, verification limits and the companion development handoff.

@@ -34,3 +34,7 @@ The design was discovered in two steps:
 
 The bridge runs with the permissions granted to Termux and Shizuku. Developer options, USB debugging, wireless debugging, pairing, and sensitive permissions remain Android-controlled steps. The project must not describe this path as root access or as a way to bypass Android security.
 
+
+## Control extensions
+
+See [control extensions](control-extensions.md) for recording usage, API compatibility, verification limits and the companion development handoff.

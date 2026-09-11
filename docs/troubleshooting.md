@@ -28,3 +28,7 @@ Confirm that the local Codex process is running and that the authenticated bridg
 
 Capture a screenshot, return to the normal view, and restart only the affected local process. Do not delete project files while diagnosing. Record Android version, device model, browser version, and the last safe action in an issue after removing private information.
 
+
+## Control extensions
+
+See [control extensions](control-extensions.md) for recording usage, API compatibility, verification limits and the companion development handoff.
